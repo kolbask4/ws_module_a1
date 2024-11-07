@@ -6,27 +6,38 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.ShoppingCart
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -39,15 +50,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ViewRootForTest
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.myapplication.ui.theme.MyApplicationTheme
+import kotlin.math.round
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -487,7 +502,12 @@ fun MagMain() {
             }
         }
     ) { contentPadding ->
-        Column(modifier = Modifier.padding(contentPadding)) {
+        Column(
+            modifier = Modifier
+                .padding(contentPadding)
+                .fillMaxSize()
+                .background(Color(0xFFF0F0F5))
+        ) {
             when (currentScreen) {
                 is MagScreen.Catalog -> Catalog()
                 is MagScreen.Cart -> Cart()
@@ -499,8 +519,94 @@ fun MagMain() {
 
 @Composable
 fun Catalog() {
-    Column {
-        
+    Column(
+        modifier = Modifier
+            .padding(top = 50.dp, start = 16.dp, end = 16.dp)
+    ) {
+        val items = listOf("Keyboard", "Oleg Sokolov", "Laptop", "Mouse", "Monitor", "Computer", "1", "2")
+
+        var searchItem by remember { mutableStateOf("") }
+
+        val filteredItems = items.filter { it.contains(searchItem, ignoreCase = true) }
+
+        OutlinedTextField(
+            value = searchItem,
+            onValueChange = { searchItem = it },
+            leadingIcon = {
+                Icon(
+                    Icons.Rounded.Search,
+                    contentDescription = "search"
+                )
+            },
+            shape = RoundedCornerShape(8.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedBorderColor = Color.LightGray,
+                focusedBorderColor = Color.LightGray,
+                focusedLeadingIconColor = Color.LightGray,
+                unfocusedLeadingIconColor = Color.LightGray
+            ),
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth()
+        )
+
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .padding(top = 16.dp)
+        ) {
+            items(filteredItems.size) {index ->
+                Box(
+                    modifier = Modifier
+                        .height(220.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.White)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(160.dp)
+                                .clip(RoundedCornerShape(16.dp)),
+                            contentAlignment = Alignment.BottomCenter
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(60.dp)
+                                    .background(
+                                        brush = Brush.verticalGradient(
+                                            colors = listOf(Color.White, Color.Gray)
+                                        )
+                                    )
+                            )
+                        }
+                        Column(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .padding(8.dp),
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                filteredItems[index],
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                "Описание",
+                                fontSize = 12.sp,
+                                color = Color.Gray
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
     }
 }
 
@@ -531,6 +637,6 @@ fun isEmailValid(email: String): Boolean {
 @Composable
 fun GreetingPreview() {
     MyApplicationTheme {
-        MainScreen()
+        MagMain()
     }
 }
