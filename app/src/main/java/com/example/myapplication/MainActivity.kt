@@ -25,9 +25,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Search
@@ -43,7 +46,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -54,6 +59,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ViewRootForTest
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -86,6 +92,11 @@ sealed class MagScreen {
     data object Catalog : MagScreen()
     data object Cart : MagScreen()
     data object Profile : MagScreen()
+    data object TovarScreen : MagScreen()
+}
+
+sealed class CatalogScreen {
+    data object TovarScreen : CatalogScreen()
 }
 
 @Composable
@@ -152,7 +163,9 @@ fun Vhod(onNavigate1: () -> Unit, onNavigate2: () -> Unit) {
                             unfocusedIndicatorColor = Color.White,
                             focusedIndicatorColor = Color.White,
                             errorContainerColor = Color.White,
-                            errorIndicatorColor = Color.Transparent
+                            errorIndicatorColor = Color.Transparent,
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black
                         ),
                         maxLines = 1,
                         isError = !isValid,
@@ -176,7 +189,9 @@ fun Vhod(onNavigate1: () -> Unit, onNavigate2: () -> Unit) {
                             unfocusedIndicatorColor = Color.White,
                             focusedIndicatorColor = Color.White,
                             errorContainerColor = Color.White,
-                            errorIndicatorColor = Color.Transparent
+                            errorIndicatorColor = Color.Transparent,
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black
                         ),
                         isError = isEmpty,
                         visualTransformation = PasswordVisualTransformation(),
@@ -317,7 +332,9 @@ fun Zareg(onNavigate: () -> Unit, vihod: () -> Unit) {
                             unfocusedIndicatorColor = Color.White,
                             focusedIndicatorColor = Color.White,
                             errorContainerColor = Color.White,
-                            errorIndicatorColor = Color.Transparent
+                            errorIndicatorColor = Color.Transparent,
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black
                         ),
                         maxLines = 1,
                         isError = isEmpty,
@@ -341,7 +358,9 @@ fun Zareg(onNavigate: () -> Unit, vihod: () -> Unit) {
                             unfocusedIndicatorColor = Color.White,
                             focusedIndicatorColor = Color.White,
                             errorContainerColor = Color.White,
-                            errorIndicatorColor = Color.Transparent
+                            errorIndicatorColor = Color.Transparent,
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black
                         ),
                         isError = !isValid,
                         modifier = Modifier
@@ -365,7 +384,9 @@ fun Zareg(onNavigate: () -> Unit, vihod: () -> Unit) {
                             focusedIndicatorColor = Color.White,
                             errorContainerColor = Color.White,
                             errorIndicatorColor = Color.Transparent,
-                            errorTrailingIconColor = Color.Black
+                            errorTrailingIconColor = Color.Black,
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black
                         ),
                         isError = isEmpty,
                         visualTransformation = if (passVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -421,6 +442,16 @@ fun Zareg(onNavigate: () -> Unit, vihod: () -> Unit) {
 @Composable
 fun MagMain() {
     var currentScreen by remember { mutableStateOf<MagScreen>(MagScreen.Catalog) }
+
+    val tovars = remember { mutableStateListOf<String>() }
+
+    val prices = remember { mutableStateListOf<Int>() }
+
+    val items =
+        listOf("Keyboard", "Oleg Sokolov", "Laptop", "Mouse", "Monitor", "Computer", "1", "2")
+
+    val qwe = remember { mutableStateOf("") }
+    val price = remember { mutableStateOf(0) }
 
     Scaffold(
         bottomBar = {
@@ -509,26 +540,47 @@ fun MagMain() {
                 .background(Color(0xFFF0F0F5))
         ) {
             when (currentScreen) {
-                is MagScreen.Catalog -> Catalog()
-                is MagScreen.Cart -> Cart()
+
+                is MagScreen.Catalog -> Catalog(
+                    items = items,
+                    tovar = { currentScreen = MagScreen.TovarScreen },
+                    qwe,
+                    price
+                )
+
+                is MagScreen.Cart -> Cart(tovars, prices)
                 is MagScreen.Profile -> Profile()
+                is MagScreen.TovarScreen -> TovarScreen(
+                    qwe.value,
+                    back = { currentScreen = MagScreen.Catalog },
+                    tovars,
+                    price.value,
+                    prices
+                )
             }
         }
     }
 }
 
 @Composable
-fun Catalog() {
+fun Catalog(
+    items: List<String>,
+    tovar: () -> Unit,
+    qwe: MutableState<String>,
+    price: MutableState<Int>
+) {
+    var searchItem by remember { mutableStateOf("") }
+
+    val filteredItems = items.filter { it.contains(searchItem, ignoreCase = true) }
+
+    val pricesList =
+        listOf(30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000)
+
+
     Column(
         modifier = Modifier
             .padding(top = 50.dp, start = 16.dp, end = 16.dp)
     ) {
-        val items = listOf("Keyboard", "Oleg Sokolov", "Laptop", "Mouse", "Monitor", "Computer", "1", "2")
-
-        var searchItem by remember { mutableStateOf("") }
-
-        val filteredItems = items.filter { it.contains(searchItem, ignoreCase = true) }
-
         OutlinedTextField(
             value = searchItem,
             onValueChange = { searchItem = it },
@@ -539,11 +591,14 @@ fun Catalog() {
                 )
             },
             shape = RoundedCornerShape(8.dp),
+            placeholder = { Text("Поиск", color = Color.LightGray) },
             colors = OutlinedTextFieldDefaults.colors(
                 unfocusedBorderColor = Color.LightGray,
                 focusedBorderColor = Color.LightGray,
                 focusedLeadingIconColor = Color.LightGray,
-                unfocusedLeadingIconColor = Color.LightGray
+                unfocusedLeadingIconColor = Color.LightGray,
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black
             ),
             singleLine = true,
             modifier = Modifier
@@ -557,12 +612,17 @@ fun Catalog() {
             modifier = Modifier
                 .padding(top = 16.dp)
         ) {
-            items(filteredItems.size) {index ->
+            items(filteredItems.size) { index ->
                 Box(
                     modifier = Modifier
                         .height(220.dp)
                         .clip(RoundedCornerShape(16.dp))
                         .background(Color.White)
+                        .clickable {
+                            tovar()
+                            qwe.value = filteredItems[index]
+                            price.value = pricesList[index]
+                        }
                 ) {
                     Column(
                         modifier = Modifier
@@ -594,7 +654,8 @@ fun Catalog() {
                         ) {
                             Text(
                                 filteredItems[index],
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
                             )
                             Text(
                                 "Описание",
@@ -611,12 +672,129 @@ fun Catalog() {
 }
 
 @Composable
-fun Cart() {
-    Box(
+fun TovarScreen(
+    tovar: String,
+    back: () -> Unit,
+    tovars: MutableList<String>,
+    price: Int,
+    prices: MutableList<Int>
+) {
+    Column(
         modifier = Modifier
-            .size(48.dp)
-            .background(Color.Blue)
-    )
+            .fillMaxSize(),
+        verticalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(400.dp)
+                    .background(Color.Gray)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(Color.LightGray)
+                        .clickable { back() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Rounded.ArrowBack,
+                        contentDescription = "arrowleft",
+                        tint = Color.White
+                    )
+                }
+            }
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+            ) {
+                Text(
+                    tovar,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black,
+                    fontSize = 24.sp
+                )
+                Text(
+                    "$price ТГ",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Gray
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.White)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(16.dp)
+                    ) {
+                        Text(
+                            "Описание: ",
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
+                        Text(
+                            "Описание товара",
+                            color = Color.Black
+                        )
+                    }
+                }
+            }
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(80.dp)
+                .background(Color.White),
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth()
+                    .height(60.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color(0xFF5F46FF))
+                    .clickable {
+                        tovars.add(tovar)
+                        prices.add(price)
+                        back()
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "Добавить в корзину",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun Cart(tovars: MutableList<String>, prices: MutableList<Int>) {
+    LazyColumn {
+        items(tovars) { tovar ->
+            Row {
+                Text(
+                    tovar,
+                    modifier = Modifier
+                        .padding(8.dp),
+                    color = Color.Black
+                )
+                Text(
+                    prices[tovars.indexOf(tovar)].toString()
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -635,7 +813,7 @@ fun isEmailValid(email: String): Boolean {
 
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
+fun QwePreview() {
     MyApplicationTheme {
         MagMain()
     }
